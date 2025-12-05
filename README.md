@@ -1,0 +1,1 @@
+# atypical_patenting_europe
