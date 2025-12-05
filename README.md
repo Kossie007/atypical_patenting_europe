@@ -84,3 +84,7 @@ The project utilizes data derived from the **OECD REGPAT database** (January 202
 ├── requirements.txt                   # Python dependencies (networkx, pandas, statsmodels)
 └── README.md                          # Project description and usage
 ```
+
+### Licence
+MIT License (MIT): see the [License File](https://github.com/sensiolabs/GotenbergBundle/blob/1.x/LICENSE) for more details.
+
