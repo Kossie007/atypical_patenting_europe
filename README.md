@@ -1,89 +1,86 @@
 # Do Regions with More Brokers Produce More Atypical Technology Combinations?
-## Investigating the Role of Inventor Brokerage and Small-World Networks in Regional Innovation
+## Investigating the Role of Inventor Brokerage and Regional Innovation
 
 ### Course: Economic Complexity – Social Data Science (MSc)
+**Institution:** Corvinus University of Budapest  
+**Year:** 2025
 
 ### Team Members:
 -   Patrik Bruinsma
 -   Ákos Virág
 
 ### Project Overview
-This repository contains the research pipeline for a project analyzing the relationship between network structure and regional innovation novelty. Innovation often emerges from the recombination of existing technologies, yet only a small fraction of inventions relies on atypical combinations of knowledge domains.
+This repository contains the research pipeline for a project analyzing the relationship between network structure and regional innovation novelty. Innovation often emerges from the recombination of existing technologies, yet only a small fraction of inventions relies on atypical (rare) combinations of knowledge domains.
 
-The primary objective of this research is to bridge firm-level brokerage mechanisms with regional-level outcomes. We investigate whether regions with a higher density of "inventor brokers" (individuals bridging structural holes) in their co-inventor networks generate a higher share of atypical technology combinations in subsequent years. Furthermore, we examine if this effect is moderated by the region's "small-world" network structure.
+The primary objective of this research is to connect individual-level brokerage mechanisms with regional-level outcomes. We investigate whether regions with a higher density of "inventor brokers" (individuals bridging structural holes or occupying central positions) in their co-inventor networks generate a higher share of atypical technology combinations. The study employs a **Two-Way Fixed Effects (TWFE)** model across European NUTS 2 regions (1979–2023) to isolate the effect of brokerage from regional heterogeneity and temporal shocks.
+
+### Key Findings
+1.  **Short-Term vs. Long-Term:** A higher share of brokers does not drive immediate "spikes" in atypical patenting (flow), but significant results are found for the accumulated **stock** of atypical capabilities.
+2.  **Network of Places:** We utilize the "Network of Places" transformation to correct for spurious density in large inventor teams.
+3.  **The "Smart Spec" Interaction:** We find a significant positive interaction between brokerage (Mean Betweenness) and **Relatedness Density**, suggesting brokers are most effective in regions with coherent, related knowledge bases.
 
 ### Repository Structure
 ```text
 .
 ├── data/
-│   ├── patstat_sample_eu27.csv        # (Restricted) Subset of EPO patent data for EU27+4 regions 
-│   └── regional_ipc_matrix.csv        # Processed Region-Year-Technology matrix
+│   └── Restricted                  # Requested from OECD Regpat.
 ├── codes/
-│   ├── 01_network_construction.ipynb  # Construction of co-inventor networks
-│   ├── 02_brokerage_metrics.ipynb     # Calculation of Burt's constraint and broker density
-│   ├── 03_novelty_measures.ipynb      # Computation of Uzzi-type z-scores for atypicality
-│   ├── 04_panel_regression.ipynb      # Main econometric analysis
-│   └── 05_main_pipeline.py            # Execution script for the full workflow 
+│   ├── 01_network_construction.py  # Network of Places transformation & Graph building
+│   ├── 02_novelty_measures.py      # Computation of Uzzi-type Z-scores for atypicality
+│   ├── 03_brokerage_metrics.py     # Calculation of Burt's Constraint & Betweenness Centrality
+│   ├── 04_panel_regression.R       # TWFE Econometric models & Interaction analysis
+│   └── 05_visualization.py         # Generation of maps and correlation plots
 ├── figures/
-│   ├── small_world_interaction.png    # Interaction plots of brokerage and network structure
-│   └── atypicality_trends.png         # Visualization of atypical patent shares over time
+│   ├── fig1_zscore_dist.png        # Distribution of IPC pair Z-scores
+│   ├── fig2_broker_geography.png   # Map of low-constraint inventor shares
+│   └── fig4_interaction.png        # Scatter plot of Brokerage vs. Atypicality
 ├── documents/
+│   └── Virág_Bruinsma_Paper.pdf    # Final research paper
+└── README.md
 ```
 
 ### Scripts
 The analysis is divided into sequential notebooks corresponding to the methodology sections of the paper.
 
-**file: `01_network_build.ipynb`**
--   Constructs the cumulative co-inventor network from the OECD REGPAT database.
--   Filters for the "active" inventor population (Degree $\geq 2$) to exclude isolates.
--   Calculates Burt’s Constraint (Eq. 1) to identify Weak ($C < \mu$) and Strong ($C \leq \mu - \sigma$) brokers.
+**file: `01_network_construction.py`**
+-   Constructs the co-inventorship networks for each NUTS 2 region using OECD REGPAT data.
+-   Applies the **"Network of Places"** transformation (Pizarro, 2007) to mitigate spurious density from large teams.
+-   Collapses structurally equivalent inventors (cliques) into single "place" nodes before calculating metrics.
 
-**file: `02_inequality.ipynb`**
--   Calculates the Herfindahl-Hirschman Index (HHI) to measure the concentration of brokerage power across 31 European countries and IPC4 technological fields.
--   Generates Lorenz curves to visualize distributional inequality, finding high geographic concentration (HHI $\approx 0.79$ for strong brokers).
+**file: `02_novelty_measures.py`**
+-   Calculates the "atypicality" of technology pairs using the method established by Uzzi et al. (2013).
+-   Constructs a null model based on observed IPC code frequencies to calculate Z-scores for every pair.
+-   Identifies atypical patents (containing pairs with $Z < 0$) and aggregates them to the regional level ($Y_{rt}$).
 
-**file: `03_robustness.ipynb`**
--   Simulates reverse percolation-style targeted node removal on the giant connected component (GCC)[cite: 63].
--   Compares the impact of removing top-degree brokers ($k=100, 500, \dots, 10000$) versus random nodes on the average shortest path length to assess network fragility[cite: 66, 67, 68].
--   Targeted removal increases path length by $\approx 40\%$, whereas random removal shows minimal impact[cite: 70, 72].
+**file: `03_brokerage_metrics.py`**
+-   Calculates **Burt’s Constraint** to identify "Share of Brokers" (inventors in the bottom 25% of the constraint distribution).
+-   Calculates **Mean Betweenness Centrality** (log-transformed) to measure the extent to which regional inventors lie on shortest paths.
+-   Computes regional network controls: Density, Isolate Share, and Community Structure (Louvain modularity).
 
-**file: `04_community.ipynb`**
--   Applies the Louvain algorithm to detect community structures, finding a high modularity of $0.994$.
--   Determines the core-periphery placement of brokers using k-core decomposition.
--   Definitions used: Periphery ($k_{core} \leq 2$), Core ($k_{core} \geq 5$), Intermediate (otherwise).
-
-**file: `05_broker_typology.ipynb`**
--   Implements feature-based role discovery using K-means clustering ($k=4$) on strong brokers.
--   Identifies four broker profiles:
-    -   **Type 1:** High clustering (embedded in cohesive teams, mean local clustering $\approx 0.95$).
-    -   **Type 2:** High degree (super-star hubs, mean degree $\approx 125.5$).
-    -   **Type 3:** Low constraint (bridging connectors, constraint $\approx 0.16$).
-    -   **Type 4:** Other (peripheral/weakly embedded).
+**file: `04_econometric_analysis.R`**
+-   Implements **Two-Way Fixed Effects (TWFE)** regression models to predict atypical patenting.
+-   Includes Region ($\mu_r$) and Time-Window ($\lambda_t$) fixed effects to control for unobserved heterogeneity and common shocks.
+-   Tests the interaction between **Brokerage** and **Relatedness Density** to examine if coherent knowledge bases amplify the effect of brokers.
 
 ### Data
-The project utilizes data derived from the **OECD REGPAT database** (January 2024 edition).
-
-**file: `regpat_nodes.csv` & `regpat_edges.csv`**
--   Represents the co-inventor network where nodes are inventors and edges are weighted by shared patents.
--   The analysis is restricted to inventors with at least two co-inventor links (Degree $\ge 2$) to exclude incidental one-time inventors.
+The project utilizes data derived from the **[OECD REGPAT database](https://www.wipo.int/en/web/economics/research)** (January 2024 edition).
+-   Contains patent applications filed with the EPO, restricted to EU and EFTA countries.
+-   **Temporal Scope:** 1979–2023, divided into nine non-overlapping 5-year windows.
+-   **Spatial Unit:** NUTS 2 regions for analysis; NUTS 3 inventor locations used for granular network construction.
 
 ### Figures and Reports
 
-**file: `figures/backbone_map.png`**
--   Visualizes the maximum spanning tree of NUTS2-level collaboration ties, highlighting high-activity regions like Germany and France (Figure 1).
+**file: `figures/fig1_zscore_dist.png`**
+-   [cite_start]Histogram showing the distribution of IPC pair Z-scores, illustrating the "fat tail" of atypical combinations (negative Z-scores).
 
-**file: `figures/broker_geography.png`**
--   Maps the clustering of countries based on their broker role composition, revealing distinct groups (e.g., Western/Northern economies vs. Eastern Europe) (Figure 2).
+**file: `figures/fig2_broker_geography.png`**
+-   Choropleth map visualizing the "Geography of Brokerage," specifically the share of low-constraint inventors across European NUTS 2 regions.
 
-**file: `documents/network_groupwork.pdf`**
--   The final research paper detailing the finding that European brokers form a dense "Elite Club" and that brokerage is technologically specialized rather than a generalist phenomenon.
+**file: `figures/fig4_interaction_scatter.png`**
+-   Scatter plot visualizing the relationship between the share of brokers and the share of atypical patents, highlighting regions like DE71 and DE12.
 
-```tex
-.
-└── research_plan.pdf              # Full research proposal and literature review
-├── requirements.txt                   # Python dependencies (networkx, pandas, statsmodels)
-└── README.md                          # Project description and usage
-```
+**file: `documents/Virág_Bruinsma_Paper.pdf`**
+-   The final research paper detailing the null results for short-term flows and the significant positive findings for long-term novelty capacity.
 
 ### Licence
 MIT License (MIT): see the [License File](https://github.com/sensiolabs/GotenbergBundle/blob/1.x/LICENSE) for more details.
